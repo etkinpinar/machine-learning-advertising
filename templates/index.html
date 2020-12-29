@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TEST</title>
+</head>
+<body>
+
+    {% for label in cont_label %}
+        <input name={{label}} type="number">
+    {% endfor %}
+
+    {% for drop in drops %}
+        <select name={{drop}} method="GET" action="/">
+           {% for unique in drop %}
+             <option value= "{{unique}}" SELECTED>{{unique}}</option>"
+           {% endfor %}
+       </select>
+    {% endfor %}
+
+</body>
+</html>
