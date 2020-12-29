@@ -8,6 +8,19 @@ data = pd.read_csv("data/data.csv")
 data = data.fillna(0)
 data = data[:5000]
 
+# drop_index = data[data['click'] == 0].index
+# data.drop(drop_index,inplace=True)
+# data = data.drop_duplicates(subset='adset_id', keep='first')
+# celebrity = pd.read_csv("data_celebrity.csv")
+# print(data.index.size)
+# drop_index = celebrity[celebrity['confidence'] < 85].index
+# celebrity.drop(drop_index,inplace=True)
+# celebrity = celebrity[['media_group_id','celebrity_name']]
+# celebrity = celebrity.drop_duplicates(subset='media_group_id', keep='first')
+# print(celebrity.size)
+# data = pd.merge(data,celebrity,on="media_group_id",how="inner")
+# print(data.size)
+# data = data.join(celebrity, on="media_group_id")
 
 predicts = np.array(['impressions', 'video_view', 'clicks', 'install', 'purchase'])
 
@@ -103,7 +116,7 @@ def decision_tree(x_train, y_train):
     return model
 
 
-regressor = [linear, lasso, ridge, k_neighbours, random_forest, decision_tree]#, ml_perceptron
+regressor = [linear, lasso, ridge, k_neighbours, random_forest, ml_perceptron, decision_tree]
 
 
 def find_best():
