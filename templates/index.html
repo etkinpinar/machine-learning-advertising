@@ -6,17 +6,43 @@
 </head>
 <body>
 
-    {% for label in cont_label %}
-        <input name={{label}} type="number">
-    {% endfor %}
+    <div id="form-div" style="font-size:30px; margin: auto;">
+        <form action="/predict" method="post">
 
-    {% for drop in drops %}
-        <select name={{drop}} method="GET" action="/">
-           {% for unique in drop %}
-             <option value= "{{unique}}" SELECTED>{{unique}}</option>"
-           {% endfor %}
-       </select>
-    {% endfor %}
+            {% for label in cont_label %}
+            {{label}}
+            <input name={{label}} type="number">
+             <br>
+            {% endfor %}
+
+            {% for drop in drops %}
+            {{cat_lab[loop.index-1]}}
+            <select name={{cat_lab[loop.index-1]}}>
+               {% for unique in drop %}
+                <option value= "{{unique}}" SELECTED>{{unique}}</option>"
+               {% endfor %}
+            </select>
+            <br>
+            {% endfor %}
+
+            <br>
+
+            <input type="submit" value="send">
+
+        </form>
+
+        {% for pre in pred %}
+        {{pred_label[loop.index-1]}} : {{pre}}<br>
+        {% endfor %}
+    </div>
+
+
+
+
+
+
+
+
 
 </body>
 </html>

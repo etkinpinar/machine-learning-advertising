@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 import pandas as pd
 # import seaborn as sns
 # import numpy as np
@@ -6,7 +6,7 @@ import pickle
 
 data = pd.read_csv("data/data.csv")
 data = data.fillna(0)
-data = data[:100]
+data = data[:3000]
 
 # drop_index = data[data['click'] == 0].index
 # data.drop(drop_index,inplace=True)
@@ -29,8 +29,8 @@ targets = data[predicts]
 features = data[['media_group_id', 'publisher_platform', 'platform_position', 'spend',
                  'account_age', 'countries', 'app_id', 'platform', 'user_os_version']]
 
-categorical_data = data[['media_group_id', 'publisher_platform', 'platform_position',
-                         'countries', 'app_id', 'platform', 'user_os_version']]
+categorical_data = data[['media_group_id', 'app_id', 'publisher_platform',
+                         'platform_position','countries', 'platform','user_os_version']]
 
 categorical_unique = []
 categorical_label = []
@@ -40,7 +40,16 @@ for cat in categorical_data:
     categorical_unique.append(categorical_data[cat].unique())
     categorical_label.append(cat)
 
-features = pd.get_dummies(data=features, drop_first=True)  # one-hot
+features = pd.get_dummies(data=features)  # one-hot
+features = pd.get_dummies(data=features, columns=["app_id", "media_group_id"])  # one-hot
+
+
+print(features.columns)
+
+sample = pd.DataFrame([features.iloc[0]], columns=features.columns)
+
+for col in sample:
+    sample[col] = 0
 
 
 def linear(x_train, y_train):
@@ -116,21 +125,21 @@ def find_best():
 
     for i in range(5):
         for reg in regressor:
-            for j in range(3):
+            # for j in range(3):
 
-                x = features
-                y = targets[[predicts[i]]]
+            x = features
+            y = targets[[predicts[i]]]
 
-                from sklearn.model_selection import train_test_split
-                x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.1)
+            from sklearn.model_selection import train_test_split
+            x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.1)
 
-                model = reg(x_train, y_train)
-                acc = model.score(x_test, y_test)
-                print('[' + predicts[i] + ']', reg.__name__, "acc: ", acc)
+            model = reg(x_train, y_train)
+            acc = model.score(x_test, y_test)
+            print('[' + predicts[i] + ']', reg.__name__, "acc: ", acc)
 
-                if acc > best_acc[i]:
-                    best_acc[i] = acc
-                    best_models[i] = model
+            if acc > best_acc[i]:
+                best_acc[i] = acc
+                best_models[i] = model
 
         print('[' + predicts[i] + '] [best acc]: ', best_acc[i])
         with open('models/' + predicts[i] + ".pickle", 'wb') as file:
@@ -155,10 +164,33 @@ app = Flask(__name__)
 
 @app.route('/')
 def dropdown():
-    return render_template('index.html', drops=categorical_unique,
+    return render_template('index.html',
+                           drops=categorical_unique,
                            cat_lab=categorical_label,
                            cont_label=continuous_label)
 
 
-find_best()
+@app.route('/predict', methods=['POST', 'GET'])
+def predict():
+    if request.method == 'POST':
+
+        new_sample = sample
+        for i in categorical_label:
+            new_sample[i + "_" + request.form.get(i)] = 1
+
+        for i in continuous_label:
+            new_sample[i] = request.form.get(i)
+
+        predictions = test_row(new_sample)
+
+        return render_template("index.html",
+                               drops=categorical_unique,
+                               cat_lab=categorical_label,
+                               cont_label=continuous_label,
+                               pred_label=predicts,
+                               pred=predictions)
+# else error
+
+
+# find_best()
 app.run()
