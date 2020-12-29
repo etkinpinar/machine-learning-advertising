@@ -3,46 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <title>TEST</title>
+
+    <style>
+        select{
+            font-size: 25px;
+        }
+
+        .but{
+            text-align: center;
+            font-size: 30px;
+            width: 80%;
+            margin: auto;
+        }
+
+
+        .inputs{
+            font-size: 25px;
+            width: 250px;
+            height: 50px;
+
+        }
+
+        form{
+            width: 600px;
+            margin: auto;
+        }
+
+        form div{
+
+        }
+
+        form div div{
+            width: 300px;
+            height: 50px;
+            text-align: right;
+            font-size: 36px;
+            float: left;
+        }
+    </style>
 </head>
 <body>
 
-    <div id="form-div" style="font-size:30px; margin: auto;">
+
         <form action="/predict" method="post">
 
             {% for label in cont_label %}
-            {{label}}
-            <input name={{label}} type="number">
+            <div>
+                <div>{{label}} :</div>
+                <input name={{label}} class="inputs" type="number" value="0">
+            </div>
              <br>
             {% endfor %}
 
             {% for drop in drops %}
-            {{cat_lab[loop.index-1]}}
-            <select name={{cat_lab[loop.index-1]}}>
+            <div>
+                <div>{{cat_lab[loop.index-1]}} :</div>
+
+            <select name={{cat_lab[loop.index-1]}} class="inputs">
                {% for unique in drop %}
                 <option value= "{{unique}}" SELECTED>{{unique}}</option>"
                {% endfor %}
-            </select>
+            </select> </div>
             <br>
             {% endfor %}
-
             <br>
-
-            <input type="submit" value="send">
-
+            <input class="but" type="submit" value="send">
         </form>
 
         {% for pre in pred %}
         {{pred_label[loop.index-1]}} : {{pre}}<br>
         {% endfor %}
-    </div>
-
-
-
-
-
-
-
-
 
 </body>
 </html>
