@@ -1,12 +1,12 @@
 from flask import Flask, render_template, request
 import pandas as pd
 # import seaborn as sns
-# import numpy as np
+import numpy as np
 import pickle
 
 data = pd.read_csv("data/data.csv")
 data = data.fillna(0)
-data = data[:3000]
+data = data[:5000]
 
 # drop_index = data[data['click'] == 0].index
 # data.drop(drop_index,inplace=True)
@@ -22,7 +22,7 @@ data = data[:3000]
 # print(data.size)
 # data = data.join(celebrity, on="media_group_id")
 
-predicts = pd.array(['impressions', 'video_view', 'clicks', 'install', 'purchase'])
+predicts = np.array(['impressions', 'video_view', 'clicks', 'install', 'purchase'])
 
 targets = data[predicts]
 
@@ -31,6 +31,9 @@ features = data[['media_group_id', 'publisher_platform', 'platform_position', 's
 
 categorical_data = data[['media_group_id', 'app_id', 'publisher_platform',
                          'platform_position','countries', 'platform','user_os_version']]
+
+
+
 
 categorical_unique = []
 categorical_label = []
@@ -42,9 +45,6 @@ for cat in categorical_data:
 
 features = pd.get_dummies(data=features)  # one-hot
 features = pd.get_dummies(data=features, columns=["app_id", "media_group_id"])  # one-hot
-
-
-print(features.columns)
 
 sample = pd.DataFrame([features.iloc[0]], columns=features.columns)
 
@@ -116,19 +116,20 @@ def decision_tree(x_train, y_train):
     return model
 
 
-regressor = [linear, lasso, ridge, k_neighbours, random_forest, ml_perceptron, decision_tree]
+regressor = [linear, lasso, ridge, k_neighbours, random_forest, decision_tree]#, ml_perceptron
 
 
 def find_best():
     best_acc = [0, 0, 0, 0, 0]
-    best_models = [0, 0, 0, 0, 0]
+    best_model_name = [0, 0, 0, 0, 0]
+    best_model = 0
 
-    for i in range(5):
+    for i in range(predicts.size):
         for reg in regressor:
             # for j in range(3):
 
             x = features
-            y = targets[[predicts[i]]]
+            y = targets[predicts[i]]
 
             from sklearn.model_selection import train_test_split
             x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.1)
@@ -139,11 +140,12 @@ def find_best():
 
             if acc > best_acc[i]:
                 best_acc[i] = acc
-                best_models[i] = model
+                best_model_name[i] = reg.__name__
+                best_model = model
 
-        print('[' + predicts[i] + '] [best acc]: ', best_acc[i])
+        print('[' + predicts[i] + ']'+' [' + best_model_name[i] + '] ' + '[best acc]: ', best_acc[i])
         with open('models/' + predicts[i] + ".pickle", 'wb') as file:
-            pickle.dump(best_models[i], file)
+            pickle.dump(best_model, file)
 
 
 def test_row(row):
@@ -153,8 +155,7 @@ def test_row(row):
     for i in range(5):
         with open('models/' + predicts[i] + ".pickle", 'rb') as file:
             model = pickle.load(file)
-
-        preds.append(model.predict(row))
+        preds.append(int(model.predict(row)))
 
     return preds
 
@@ -173,15 +174,20 @@ def dropdown():
 @app.route('/predict', methods=['POST', 'GET'])
 def predict():
     if request.method == 'POST':
-
         new_sample = sample
         for i in categorical_label:
             new_sample[i + "_" + request.form.get(i)] = 1
 
         for i in continuous_label:
-            new_sample[i] = request.form.get(i)
+            if not request.form.get(i):
+                new_sample[i] = 0
+            else:
+                new_sample[i] = request.form.get(i)
 
         predictions = test_row(new_sample)
+        for i in range(len(predictions)):
+            if predictions[i] < 0:
+                predictions[i] = 0
 
         return render_template("index.html",
                                drops=categorical_unique,
@@ -192,5 +198,5 @@ def predict():
 # else error
 
 
-# find_best()
+#find_best()
 app.run()
