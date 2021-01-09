@@ -6,7 +6,7 @@ __pycache__/
 #Gereksizler
 columns.pkl
 accs.txt
-eskimain.py
+celebmain.py
 linear_reg.py
 predict.py
 reg_byPlatform.py

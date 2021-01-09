@@ -3,37 +3,49 @@ import pandas as pd
 # import seaborn as sns
 import numpy as np
 import pickle
+from sklearn.metrics import *
 
 data = pd.read_csv("data/data.csv")
 data = data.fillna(0)
-data = data[:5000]
+#data = data[:100000]
+print(data.index.size)
 
-# drop_index = data[data['click'] == 0].index
-# data.drop(drop_index,inplace=True)
+#drop_index = data[data['purchase'] > 100].index
+#data.drop(drop_index,inplace=True)
+print(data.index.size)
 # data = data.drop_duplicates(subset='adset_id', keep='first')
-# celebrity = pd.read_csv("data_celebrity.csv")
+#celebrity = pd.read_csv("data/data_celebrity.csv")
 # print(data.index.size)
-# drop_index = celebrity[celebrity['confidence'] < 85].index
-# celebrity.drop(drop_index,inplace=True)
+#drop_index = celebrity[celebrity['confidence'] < 85].index
+#celebrity.drop(drop_index,inplace=True)
 # celebrity = celebrity[['media_group_id','celebrity_name']]
-# celebrity = celebrity.drop_duplicates(subset='media_group_id', keep='first')
+#celebrity = celebrity.drop_duplicates(subset='media_group_id', keep='first')
 # print(celebrity.size)
-# data = pd.merge(data,celebrity,on="media_group_id",how="inner")
+#data = pd.merge(data,celebrity,on="media_group_id",how="inn")
 # print(data.size)
 # data = data.join(celebrity, on="media_group_id")
 
-predicts = np.array(['impressions', 'video_view', 'clicks', 'install', 'purchase'])
+# drop_index = data[data['click'] == 0].index
+# data.drop(drop_index,inplace=True)
 
+#celebrity = pd.read_csv("data/data_celebrity.csv")
+#
+#drop_index = celebrity[celebrity['confidence'] < 85].index
+#celebrity.drop(drop_index, inplace=True)
+#
+#celebrity = celebrity.drop_duplicates(subset='media_group_id', keep='first')
+
+#data = pd.merge(data, celebrity, on="media_group_id", how="left")
+#data = data.fillna("no_celeb")
+
+predicts = np.array(['impressions', 'video_view', 'clicks', 'install', 'purchase'])
 targets = data[predicts]
 
-features = data[['media_group_id', 'publisher_platform', 'platform_position', 'spend',
+features = data[[ 'publisher_platform', 'media_group_id', 'platform_position', 'spend', #'celebrity_name',
                  'account_age', 'countries', 'app_id', 'platform', 'user_os_version']]
 
-categorical_data = data[['media_group_id', 'app_id', 'publisher_platform',
+categorical_data = data[[ 'app_id', 'media_group_id', 'publisher_platform', #'celebrity_name',
                          'platform_position','countries', 'platform','user_os_version']]
-
-
-
 
 categorical_unique = []
 categorical_label = []
@@ -42,12 +54,11 @@ continuous_label = ['spend', 'account_age']
 for cat in categorical_data:
     categorical_unique.append(categorical_data[cat].unique())
     categorical_label.append(cat)
-
 features = pd.get_dummies(data=features)  # one-hot
-features = pd.get_dummies(data=features, columns=["app_id", "media_group_id"])  # one-hot
-
+#features = pd.get_dummies(data=features, columns=["app_id"])  # one-hot
+print(features.columns.size)
 sample = pd.DataFrame([features.iloc[0]], columns=features.columns)
-
+print(sample.columns.size)
 for col in sample:
     sample[col] = 0
 
@@ -116,7 +127,7 @@ def decision_tree(x_train, y_train):
     return model
 
 
-regressor = [linear, lasso, ridge, k_neighbours, random_forest, ml_perceptron, decision_tree]
+regressor = [linear, lasso, ridge, k_neighbours, random_forest, decision_tree, ml_perceptron] #,
 
 
 def find_best():
@@ -126,7 +137,7 @@ def find_best():
 
     for i in range(predicts.size):
         for reg in regressor:
-            # for j in range(3):
+            #for j in range(3):
 
             x = features
             y = targets[predicts[i]]
@@ -134,9 +145,17 @@ def find_best():
             from sklearn.model_selection import train_test_split
             x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.1)
 
+
+
             model = reg(x_train, y_train)
             acc = model.score(x_test, y_test)
+            y_pred = (model.predict(x_test)).astype(int).clip(min=0)
+            y_clip = np.array(y_test).clip(min=0.1)
+            mape = mean_absolute_percentage_error(y_clip, y_pred)
+            mae = median_absolute_error(y_test, y_pred)
             print('[' + predicts[i] + ']', reg.__name__, "acc: ", acc)
+            print('[' + predicts[i] + ']', reg.__name__, "mape: ", mape)
+            print('[' + predicts[i] + ']', reg.__name__, "mae: ", mae)
 
             if acc > best_acc[i]:
                 best_acc[i] = acc
@@ -197,6 +216,5 @@ def predict():
                                pred=predictions)
 # else error
 
-
-#find_best()
+find_best()
 app.run()
