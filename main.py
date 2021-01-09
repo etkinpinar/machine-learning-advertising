@@ -12,7 +12,6 @@ print(data.index.size)
 
 #drop_index = data[data['purchase'] > 100].index
 #data.drop(drop_index,inplace=True)
-print(data.index.size)
 # data = data.drop_duplicates(subset='adset_id', keep='first')
 #celebrity = pd.read_csv("data/data_celebrity.csv")
 # print(data.index.size)
@@ -28,23 +27,24 @@ print(data.index.size)
 # drop_index = data[data['click'] == 0].index
 # data.drop(drop_index,inplace=True)
 
-#celebrity = pd.read_csv("data/data_celebrity.csv")
-#
-#drop_index = celebrity[celebrity['confidence'] < 85].index
-#celebrity.drop(drop_index, inplace=True)
-#
-#celebrity = celebrity.drop_duplicates(subset='media_group_id', keep='first')
+celebrity = pd.read_csv("data/data_celebrity.csv")
 
-#data = pd.merge(data, celebrity, on="media_group_id", how="left")
-#data = data.fillna("no_celeb")
+drop_index = celebrity[celebrity['confidence'] < 90].index
+celebrity.drop(drop_index, inplace=True)
+
+celebrity = celebrity.drop_duplicates(subset='media_group_id', keep='first')
+
+data = pd.merge(data, celebrity, on="media_group_id", how="left")
+data = data.fillna("no_celeb")
+print(data.index.size)
 
 predicts = np.array(['impressions', 'video_view', 'clicks', 'install', 'purchase'])
 targets = data[predicts]
 
-features = data[[ 'publisher_platform', 'media_group_id', 'platform_position', 'spend', #'celebrity_name',
+features = data[[ 'publisher_platform', 'platform_position', 'spend', 'celebrity_name',
                  'account_age', 'countries', 'app_id', 'platform', 'user_os_version']]
 
-categorical_data = data[[ 'app_id', 'media_group_id', 'publisher_platform', #'celebrity_name',
+categorical_data = data[[ 'app_id', 'publisher_platform', 'celebrity_name',
                          'platform_position','countries', 'platform','user_os_version']]
 
 categorical_unique = []
@@ -55,7 +55,8 @@ for cat in categorical_data:
     categorical_unique.append(categorical_data[cat].unique())
     categorical_label.append(cat)
 features = pd.get_dummies(data=features)  # one-hot
-#features = pd.get_dummies(data=features, columns=["app_id"])  # one-hot
+features = pd.get_dummies(data=features, columns=["app_id"])  # one-hot
+
 print(features.columns.size)
 sample = pd.DataFrame([features.iloc[0]], columns=features.columns)
 print(sample.columns.size)
@@ -113,7 +114,7 @@ def random_forest(x_train, y_train):
 
 def ml_perceptron(x_train, y_train):
     from sklearn.neural_network import MLPRegressor
-    model = MLPRegressor(max_iter=1000)
+    model = MLPRegressor(max_iter=50, tol=0.1)
     model.fit(x_train, y_train.values.ravel())
 
     return model
@@ -127,7 +128,7 @@ def decision_tree(x_train, y_train):
     return model
 
 
-regressor = [linear, lasso, ridge, k_neighbours, random_forest, decision_tree, ml_perceptron] #,
+regressor = [linear, lasso, ridge, k_neighbours, random_forest, decision_tree, ml_perceptron] #
 
 
 def find_best():
@@ -149,10 +150,10 @@ def find_best():
 
             model = reg(x_train, y_train)
             acc = model.score(x_test, y_test)
-            y_pred = (model.predict(x_test)).astype(int).clip(min=0)
+            y_pred = np.round((model.predict(x_test)).clip(min=0), 0)
             y_clip = np.array(y_test).clip(min=0.1)
             mape = mean_absolute_percentage_error(y_clip, y_pred)
-            mae = median_absolute_error(y_test, y_pred)
+            mae = mean_absolute_error(y_test, y_pred)
             print('[' + predicts[i] + ']', reg.__name__, "acc: ", acc)
             print('[' + predicts[i] + ']', reg.__name__, "mape: ", mape)
             print('[' + predicts[i] + ']', reg.__name__, "mae: ", mae)
@@ -194,6 +195,8 @@ def dropdown():
 def predict():
     if request.method == 'POST':
         new_sample = sample
+
+        print(new_sample.columns.size)
         for i in categorical_label:
             new_sample[i + "_" + request.form.get(i)] = 1
 
@@ -203,6 +206,7 @@ def predict():
             else:
                 new_sample[i] = request.form.get(i)
 
+        print(new_sample.columns.size)
         predictions = test_row(new_sample)
         for i in range(len(predictions)):
             if predictions[i] < 0:
