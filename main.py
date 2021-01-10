@@ -37,6 +37,7 @@ celebrity = celebrity.groupby(["media_group_id"]).sum()
 # main data
 data = pd.read_csv("data/data.csv")
 data = data.fillna(0)
+data = data[:10000]
 
 predicts = np.array(['impressions', 'video_view', 'clicks', 'install', 'purchase'])
 targets = data[predicts]
@@ -68,10 +69,7 @@ features = pd.merge(features, celebrity, on="media_group_id", how="left")
 features = pd.merge(features, label, on="media_group_id", how="left")
 features = features.fillna(0)
 
-print(features.columns.size)
 sample = pd.DataFrame([features.iloc[0]], columns=features.columns)
-print(sample.columns.size)
-
 
 for col in sample:
     sample[col] = 0
@@ -227,7 +225,6 @@ def predict():
         for i in new_sample:
             if new_sample[i][0] == 1: print(i, 1)
 
-        print(new_sample.columns.size)
         predictions = test_row(new_sample)
         for i in range(len(predictions)):
             if predictions[i] < 0:
@@ -244,5 +241,5 @@ def predict():
 # else error
 
 
-find_best()
+# find_best()
 app.run()

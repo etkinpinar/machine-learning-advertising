@@ -9,10 +9,18 @@
             font-size: 25px;
         }
 
+        .results{
+            text-align: center;
+            font-size: 30px;
+            padding: 10%"
+            margin: auto;
+            border: black 10px solid;
+        }
+
         .but{
             text-align: center;
             font-size: 30px;
-            width: 80%;
+            width: 1200px;
             margin: auto;
         }
 
@@ -28,16 +36,14 @@
             font-size: 25px;
             width: 250px;
             height: 300px;
-
         }
 
-        form{
+        .main{
             width: 1200px;
             margin: auto;
-        }
-
-        form div{
-
+            padding: 50px;
+            border: black 10px solid;
+            background-color : white;
         }
 
         .m-drop{
@@ -57,9 +63,13 @@
         }
     </style>
 
-    <h1 style="text-align: center;"></h1>
+    <h1 style="text-align: center; font-size: 50px">
+        KAMPANYA FİYATLANDIRMA ARACI
+    </h1>
 </head>
-<body>
+<body style="background-color : wheat">
+
+    <div class = "main">
 
         <form action="/predict" method="post">
 
@@ -105,9 +115,12 @@
             <input class="but" type="submit" value="send">
         </form>
 
+        <div class="results">
         {% for pre in pred %}
         {{pred_label[loop.index-1]}} : {{pre}}<br>
         {% endfor %}
+        </div>
+    </div>
 
 </body>
 </html>
