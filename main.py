@@ -5,61 +5,74 @@ import numpy as np
 import pickle
 from sklearn.metrics import *
 
-data = pd.read_csv("data/data.csv")
-data = data.fillna(0)
-#data = data[:100000]
-print(data.index.size)
+# label data
+label = pd.read_csv("data/data_label.csv")
 
-#drop_index = data[data['purchase'] > 100].index
-#data.drop(drop_index,inplace=True)
-# data = data.drop_duplicates(subset='adset_id', keep='first')
-#celebrity = pd.read_csv("data/data_celebrity.csv")
-# print(data.index.size)
-#drop_index = celebrity[celebrity['confidence'] < 85].index
-#celebrity.drop(drop_index,inplace=True)
-# celebrity = celebrity[['media_group_id','celebrity_name']]
-#celebrity = celebrity.drop_duplicates(subset='media_group_id', keep='first')
-# print(celebrity.size)
-#data = pd.merge(data,celebrity,on="media_group_id",how="inn")
-# print(data.size)
-# data = data.join(celebrity, on="media_group_id")
+drop_index = label[label['label_confidence'] < 90].index
+label.drop(drop_index, inplace=True)
 
-# drop_index = data[data['click'] == 0].index
-# data.drop(drop_index,inplace=True)
+drop_index = label[label['parents'] != '[]'].index
+label.drop(drop_index, inplace=True)
 
+label = label[['media_group_id', 'label']]
+
+label = label.drop_duplicates()
+label_unique = label['label'].unique()
+label = pd.get_dummies(label)
+label = label.groupby(["media_group_id"]).sum()
+
+# celebrity data
 celebrity = pd.read_csv("data/data_celebrity.csv")
 
-drop_index = celebrity[celebrity['confidence'] < 90].index
+drop_index = celebrity[celebrity['confidence'] < 85].index
 celebrity.drop(drop_index, inplace=True)
 
-celebrity = celebrity.drop_duplicates(subset='media_group_id', keep='first')
+celebrity = celebrity[["media_group_id", "celebrity_name"]]
+celebrity = celebrity.drop_duplicates()
+celebrity_unique = celebrity['celebrity_name'].unique()
+celebrity = pd.get_dummies(celebrity)
+celebrity = celebrity.groupby(["media_group_id"]).sum()
 
-data = pd.merge(data, celebrity, on="media_group_id", how="left")
-data = data.fillna("no_celeb")
-print(data.index.size)
+
+# main data
+data = pd.read_csv("data/data.csv")
+data = data.fillna(0)
 
 predicts = np.array(['impressions', 'video_view', 'clicks', 'install', 'purchase'])
 targets = data[predicts]
 
-features = data[[ 'publisher_platform', 'platform_position', 'spend', 'celebrity_name',
-                 'account_age', 'countries', 'app_id', 'platform', 'user_os_version']]
+features = data[['publisher_platform', 'platform_position', 'spend',  'account_age',
+                 'countries', 'app_id', 'platform', 'user_os_version', 'media_group_id']]
 
-categorical_data = data[[ 'app_id', 'publisher_platform', 'celebrity_name',
-                         'platform_position','countries', 'platform','user_os_version']]
+categorical_data = data[['app_id', 'publisher_platform', 'platform_position', 'countries',
+                         'platform', 'user_os_version']]
+
+
+m_categorical_unique = [celebrity_unique, label_unique]
+m_categorical_label = ['celebrity_name', 'label']
 
 categorical_unique = []
 categorical_label = []
-continuous_label = ['spend', 'account_age']
+continuous_label = ['spend', 'account_age', 'media_group_id']
+
 
 for cat in categorical_data:
+
     categorical_unique.append(categorical_data[cat].unique())
     categorical_label.append(cat)
+
 features = pd.get_dummies(data=features)  # one-hot
 features = pd.get_dummies(data=features, columns=["app_id"])  # one-hot
+
+features = pd.merge(features, celebrity, on="media_group_id", how="left")
+features = pd.merge(features, label, on="media_group_id", how="left")
+features = features.fillna(0)
 
 print(features.columns.size)
 sample = pd.DataFrame([features.iloc[0]], columns=features.columns)
 print(sample.columns.size)
+
+
 for col in sample:
     sample[col] = 0
 
@@ -89,6 +102,7 @@ def ridge(x_train, y_train):
 
 
 def support_vector(x_train, y_train):
+
     from sklearn.svm import SVR
     model = SVR()
     model.fit(x_train, y_train.values.ravel())
@@ -128,8 +142,8 @@ def decision_tree(x_train, y_train):
     return model
 
 
-regressor = [linear, lasso, ridge, k_neighbours, random_forest, decision_tree, ml_perceptron] #
-
+#regressor = [linear, lasso, ridge, k_neighbours, random_forest, decision_tree, ml_perceptron] #
+regressor = [random_forest]
 
 def find_best():
     best_acc = [0, 0, 0, 0, 0]
@@ -138,15 +152,12 @@ def find_best():
 
     for i in range(predicts.size):
         for reg in regressor:
-            #for j in range(3):
-
+            # for j in range(3):
             x = features
             y = targets[predicts[i]]
 
             from sklearn.model_selection import train_test_split
             x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.1)
-
-
 
             model = reg(x_train, y_train)
             acc = model.score(x_test, y_test)
@@ -186,6 +197,8 @@ app = Flask(__name__)
 @app.route('/')
 def dropdown():
     return render_template('index.html',
+                           m_drops=m_categorical_unique,
+                           m_label=m_categorical_label,
                            drops=categorical_unique,
                            cat_lab=categorical_label,
                            cont_label=continuous_label)
@@ -200,11 +213,22 @@ def predict():
         for i in categorical_label:
             new_sample[i + "_" + request.form.get(i)] = 1
 
+        for i in m_categorical_label:
+            values = request.form.getlist(i)
+            for j in values:
+                new_sample[i + "_" + j] = 1
+
+        for i in m_categorical_label:
+            new_sample[i + "_" + request.form.get(i)] = 1
+
         for i in continuous_label:
             if not request.form.get(i):
                 new_sample[i] = 0
             else:
                 new_sample[i] = request.form.get(i)
+
+        for i in new_sample:
+            print(i, new_sample[i][0])
 
         print(new_sample.columns.size)
         predictions = test_row(new_sample)
@@ -214,11 +238,14 @@ def predict():
 
         return render_template("index.html",
                                drops=categorical_unique,
+                               m_drops=m_categorical_unique,
+                               m_label=m_categorical_label,
                                cat_lab=categorical_label,
                                cont_label=continuous_label,
                                pred_label=predicts,
                                pred=predictions)
 # else error
 
-find_best()
+
+# find_best()
 app.run()

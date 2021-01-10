@@ -41,9 +41,10 @@
             float: left;
         }
     </style>
+
+    <h1 style="text-align: center;"></h1>
 </head>
 <body>
-
 
         <form action="/predict" method="post">
 
@@ -52,7 +53,7 @@
                 <div>{{label}} :</div>
                 <input name={{label}} class="inputs" type="number" value="0">
             </div>
-             <br>
+            <br>
             {% endfor %}
 
             {% for drop in drops %}
@@ -61,12 +62,27 @@
 
             <select name={{cat_lab[loop.index-1]}} class="inputs">
                {% for unique in drop %}
-                <option value= "{{unique}}" SELECTED>{{unique}}</option>"
+                <option value= "{{unique}}">{{unique}}</option>
+               {% endfor %}
+            </select>
+            </div>
+            <br>
+            {% endfor %}
+
+            {% for m_drop in m_drops %}
+            <div>
+                <div>{{m_label[loop.index-1]}} :</div>
+
+            <select multiple name={{m_label[loop.index-1]}} class="inputs">
+               {% for unique in m_drop %}
+                <option value= "{{unique}}" >{{unique}}</option>
                {% endfor %}
             </select> </div>
             <br>
             {% endfor %}
+
             <br>
+
             <input class="but" type="submit" value="send">
         </form>
 
