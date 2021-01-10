@@ -24,13 +24,28 @@
 
         }
 
+        .minputs{
+            font-size: 25px;
+            width: 250px;
+            height: 300px;
+
+        }
+
         form{
-            width: 600px;
+            width: 1200px;
             margin: auto;
         }
 
         form div{
 
+        }
+
+        .m-drop{
+            float: left;
+        }
+
+        .drop{
+            float: left;
         }
 
         form div div{
@@ -48,14 +63,16 @@
 
         <form action="/predict" method="post">
 
-            {% for label in cont_label %}
+
+
+            <span  class="drop">
+                 {% for label in cont_label %}
             <div>
                 <div>{{label}} :</div>
                 <input name={{label}} class="inputs" type="number" value="0">
             </div>
             <br>
             {% endfor %}
-
             {% for drop in drops %}
             <div>
                 <div>{{cat_lab[loop.index-1]}} :</div>
@@ -68,19 +85,21 @@
             </div>
             <br>
             {% endfor %}
+            </span>
 
+            <span class="m-drop">
             {% for m_drop in m_drops %}
             <div>
                 <div>{{m_label[loop.index-1]}} :</div>
 
-            <select multiple name={{m_label[loop.index-1]}} class="inputs">
+            <select multiple name={{m_label[loop.index-1]}} class="minputs">
                {% for unique in m_drop %}
                 <option value= "{{unique}}" >{{unique}}</option>
                {% endfor %}
             </select> </div>
             <br>
             {% endfor %}
-
+            </span>
             <br>
 
             <input class="but" type="submit" value="send">

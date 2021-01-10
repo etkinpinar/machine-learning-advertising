@@ -142,8 +142,8 @@ def decision_tree(x_train, y_train):
     return model
 
 
-#regressor = [linear, lasso, ridge, k_neighbours, random_forest, decision_tree, ml_perceptron] #
-regressor = [random_forest]
+regressor = [linear, lasso, ridge, k_neighbours, random_forest, decision_tree, ml_perceptron] #
+#regressor = [random_forest]
 
 def find_best():
     best_acc = [0, 0, 0, 0, 0]
@@ -152,29 +152,29 @@ def find_best():
 
     for i in range(predicts.size):
         for reg in regressor:
-            # for j in range(3):
-            x = features
-            y = targets[predicts[i]]
+             for j in range(3):
+                x = features
+                y = targets[predicts[i]]
 
-            from sklearn.model_selection import train_test_split
-            x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.1)
+                from sklearn.model_selection import train_test_split
+                x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.1)
 
-            model = reg(x_train, y_train)
-            acc = model.score(x_test, y_test)
-            y_pred = np.round((model.predict(x_test)).clip(min=0), 0)
-            y_clip = np.array(y_test).clip(min=0.1)
-            mape = mean_absolute_percentage_error(y_clip, y_pred)
-            mae = mean_absolute_error(y_test, y_pred)
-            print('[' + predicts[i] + ']', reg.__name__, "acc: ", acc)
-            print('[' + predicts[i] + ']', reg.__name__, "mape: ", mape)
-            print('[' + predicts[i] + ']', reg.__name__, "mae: ", mae)
+                model = reg(x_train, y_train)
+                acc = model.score(x_test, y_test)
+                y_pred = np.round((model.predict(x_test)).clip(min=0), 0)
+                y_clip = np.array(y_test).clip(min=0.1)
+                mape = mean_absolute_percentage_error(y_clip, y_pred)
+                mae = mean_absolute_error(y_test, y_pred)
+                print('[' + predicts[i] + ']', reg.__name__, "acc: ", acc)
+                print('[' + predicts[i] + ']', reg.__name__, "mape: ", mape)
+                print('[' + predicts[i] + ']', reg.__name__, "mae: ", mae)
 
-            if acc > best_acc[i]:
-                best_acc[i] = acc
-                best_model_name[i] = reg.__name__
-                best_model = model
+                if acc > best_acc[i]:
+                    best_acc[i] = acc
+                    best_model_name[i] = reg.__name__
+                    best_model = model
 
-        print('[' + predicts[i] + ']'+' [' + best_model_name[i] + '] ' + '[best acc]: ', best_acc[i])
+        print('[', predicts[i], ']',' [', best_model_name[i], '] ', '[best acc]: ', best_acc[i])
         with open('models/' + predicts[i] + ".pickle", 'wb') as file:
             pickle.dump(best_model, file)
 
@@ -207,19 +207,16 @@ def dropdown():
 @app.route('/predict', methods=['POST', 'GET'])
 def predict():
     if request.method == 'POST':
-        new_sample = sample
+        new_sample = sample.copy()
 
-        print(new_sample.columns.size)
         for i in categorical_label:
             new_sample[i + "_" + request.form.get(i)] = 1
 
         for i in m_categorical_label:
             values = request.form.getlist(i)
-            for j in values:
-                new_sample[i + "_" + j] = 1
-
-        for i in m_categorical_label:
-            new_sample[i + "_" + request.form.get(i)] = 1
+            if values:
+                for j in values:
+                    new_sample[i + "_" + j] = 1
 
         for i in continuous_label:
             if not request.form.get(i):
@@ -228,7 +225,7 @@ def predict():
                 new_sample[i] = request.form.get(i)
 
         for i in new_sample:
-            print(i, new_sample[i][0])
+            if new_sample[i][0] == 1: print(i, 1)
 
         print(new_sample.columns.size)
         predictions = test_row(new_sample)
@@ -247,5 +244,5 @@ def predict():
 # else error
 
 
-# find_best()
+find_best()
 app.run()
