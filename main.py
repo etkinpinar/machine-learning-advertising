@@ -37,7 +37,6 @@ celebrity = celebrity.groupby(["media_group_id"]).sum()
 # main data
 data = pd.read_csv("data/data.csv")
 data = data.fillna(0)
-data = data[:10000]
 
 predicts = np.array(['impressions', 'video_view', 'clicks', 'install', 'purchase'])
 targets = data[predicts]
@@ -56,10 +55,11 @@ categorical_unique = []
 categorical_label = []
 continuous_label = ['spend', 'account_age', 'media_group_id']
 
-
 for cat in categorical_data:
-
-    categorical_unique.append(categorical_data[cat].unique())
+    if cat == "app_id":
+        categorical_unique.append(np.append("new_app", categorical_data[cat].unique()))
+    else:
+        categorical_unique.append(categorical_data[cat].unique())
     categorical_label.append(cat)
 
 features = pd.get_dummies(data=features)  # one-hot
@@ -69,6 +69,7 @@ features = pd.merge(features, celebrity, on="media_group_id", how="left")
 features = pd.merge(features, label, on="media_group_id", how="left")
 features = features.fillna(0)
 
+print(features)
 sample = pd.DataFrame([features.iloc[0]], columns=features.columns)
 
 for col in sample:
@@ -141,7 +142,7 @@ def decision_tree(x_train, y_train):
 
 
 regressor = [linear, lasso, ridge, k_neighbours, random_forest, decision_tree, ml_perceptron] #
-#regressor = [random_forest]
+#regressor = [ridge]
 
 def find_best():
     best_acc = [0, 0, 0, 0, 0]
@@ -208,7 +209,8 @@ def predict():
         new_sample = sample.copy()
 
         for i in categorical_label:
-            new_sample[i + "_" + request.form.get(i)] = 1
+            if request.form.get(i) != "new_app":
+                new_sample[i + "_" + request.form.get(i)] = 1
 
         for i in m_categorical_label:
             values = request.form.getlist(i)
@@ -241,5 +243,5 @@ def predict():
 # else error
 
 
-# find_best()
+#find_best()
 app.run()
